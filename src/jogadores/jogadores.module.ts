@@ -1,4 +1,4 @@
-import { Module, Post } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { JogadoresController } from './jogadores.controller';
 import { JogadoresService } from './jogadores.service';
 import { MongooseModule } from '@nestjs/mongoose';
