@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Post,
+  Query,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
+import { JogadoresValidacaoParametrosPipe } from './pipes/jogadores-validacao-parametros';
 import { CriarJogadorDto } from './dtos/criar-jogador.dto';
 import { Jogador } from './interfaces/jogador.interface';
 import { JogadoresService } from './jogadores.service';
@@ -7,12 +17,13 @@ import { JogadoresService } from './jogadores.service';
 export class JogadoresController {
   constructor(private readonly jogadoresService: JogadoresService) {}
   @Post()
+  @UsePipes(ValidationPipe)
   async criarAtualizarJogador(@Body() criaJogadorDto: CriarJogadorDto) {
     this.jogadoresService.criarAtualizarJogador(criaJogadorDto);
   }
   @Get()
   async consultarJogadores(
-    @Query('email') email: string,
+    @Query('email', JogadoresValidacaoParametrosPipe) email: string,
   ): Promise<Jogador[] | Jogador> {
     if (email) {
       return this.jogadoresService.consultarJogadoresPeloEmail(email);
@@ -21,7 +32,9 @@ export class JogadoresController {
     }
   }
   @Delete()
-  async deletarJogador(@Query('email') email: string): Promise<void> {
+  async deletarJogador(
+    @Query('email', JogadoresValidacaoParametrosPipe) email: string,
+  ): Promise<void> {
     this.jogadoresService.deletarJogador(email);
   }
 }
