@@ -1,9 +1,15 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CriarJogadorDto } from './dtos/criar-jogador.dto';
 import { Jogador } from './interfaces/jogador.interface';
 import { v4 as uuidv4 } from 'uuid';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { AtualizarJogadorDto } from './dtos/atualizar-jogador.dto';
 
 @Injectable()
 export class JogadoresService {
@@ -14,25 +20,36 @@ export class JogadoresService {
   ) {}
 
   private readonly logger = new Logger(JogadoresService.name);
-  async criarAtualizarJogador(criaJogadorDto: CriarJogadorDto): Promise<void> {
+  async criarJogador(criaJogadorDto: CriarJogadorDto): Promise<Jogador> {
     const { email } = criaJogadorDto;
-
-    // const jogadorEncontrado = await this.jogadores.find(
-    //   (jogador) => jogador.email === email,
-    // );
 
     const jogadorEncontrado = await this.jogadorModel.findOne({ email }).exec();
     if (jogadorEncontrado) {
-      this.atualizar(criaJogadorDto);
-    } else {
-      this.criar(criaJogadorDto);
+      throw new BadRequestException(
+        `Jogador com e-mail ${email} já cadastrado`,
+      );
     }
+    const jogadorCriado = new this.jogadorModel(criaJogadorDto);
+    return jogadorCriado.save();
   }
 
-  async consultarJogadoresPeloEmail(email: string): Promise<Jogador> {
-    const jogadorEncontrado = this.jogadorModel.findOne({ email }).exec();
+  // async atualizarJogador(
+  //   _id: string,
+  //   criaJogadorDto: CriarJogadorDto,
+  // ): Promise<void> {
+  //   const jogadorEncontrado = await this.jogadorModel.findOne({ _id }).exec();
+  //   if (!jogadorEncontrado) {
+  //     throw new NotFoundException(`Jogador com ${_id} não encontrado`);
+  //   }
+  //   this.jogadorModel
+  //     .findOneAndUpdate({ _id: criaJogadorDto.email }, { $set: criaJogadorDto })
+  //     .exec();
+  // }
+
+  async consultarJogadoresPeloId(_id: string): Promise<Jogador> {
+    const jogadorEncontrado = this.jogadorModel.findOne({ _id }).exec();
     if (!jogadorEncontrado) {
-      throw new NotFoundException(`Jogador com e-mail ${email} não encontrado`);
+      throw new NotFoundException(`Jogador com e-mail ${_id} não encontrado`);
     }
     return jogadorEncontrado;
   }
@@ -41,34 +58,29 @@ export class JogadoresService {
     return this.jogadorModel.find().exec();
   }
 
-  private async criar(criaJogadorDto: CriarJogadorDto): Promise<Jogador> {
-    // const { nome, telefoneCelular, email } = criaJogadorDto;
+  // private async criar(criaJogadorDto: CriarJogadorDto): Promise<Jogador> {
+  //   // const { nome, telefoneCelular, email } = criaJogadorDto;
 
-    const jogadorCriado = new this.jogadorModel(criaJogadorDto);
-    return jogadorCriado.save();
-  }
+  //   const jogadorCriado = new this.jogadorModel(criaJogadorDto);
+  //   return jogadorCriado.save();
+  // }
 
-  private async atualizar(criarJogadorDto: CriarJogadorDto): Promise<Jogador> {
-    return this.jogadorModel
-      .findOneAndUpdate(
-        { email: criarJogadorDto.email },
-        { $set: criarJogadorDto },
-      )
+  async atualizarJogador(
+    _id: string,
+    atualizarJogadorDto: AtualizarJogadorDto,
+  ): Promise<void> {
+    const jogadorEncontrado = this.jogadorModel.findOne({ _id }).exec;
+
+    if (!jogadorEncontrado) {
+      throw new NotFoundException(`Jogador com id ${_id} não encontrado`);
+    }
+
+    this.jogadorModel
+      .findOneAndUpdate({ _id }, { $set: atualizarJogadorDto })
       .exec();
-    // const { nome } = criarJogadorDto;
-
-    // jogadorEncontrado.nome = nome;
   }
 
   async deletarJogador(email): Promise<any> {
-    // const jogadorEncontrado = this.jogadores.find(
-    //   (jogador) => jogador.email === email,
-    // );
-    // // if(!jogadorEncontrado){
-    // //   throw new NotFoundException(`Jogador com e-mail ${email} não encontrado`);
-    // this.jogadores = this.jogadores.filter(
-    //   (jogador) => jogador.email !== jogadorEncontrado.email,
-    // );
     return this.jogadorModel.deleteOne({ email }).exec();
   }
 }
